@@ -1,0 +1,93 @@
+---
+title: "Joe_Rovalino_Data607_wk#5"
+author: "Joe Rovalino"
+date: "9/29/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Relevant Information:
+The chart was loaded into MySQL DB and describes arrival delays for two airlines across five destinations. Your task is to:
+(1) Create a .CSV file (or optionally, a MySQL database!) that includes all of the information above. - CHOSE to load to MySQL and use the lesson from homework 2 to create DB.
+You’re encouraged to use a “wide” structure similar to how the information appears above, so
+that you can practice tidying and transformations as described below.
+(2) Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy
+and transform your data.
+(3) Perform analysis to compare the arrival delays for the two airlines.
+(4) Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative
+descriptions of your data cleanup work, analysis, and conclusions. Please include in your
+homework submission:
+The URL to the .Rmd file in your GitHub repository. and
+The URL for your rpubs.com web page.
+
+```{r}
+library(getPass)
+library(RMySQL)
+
+db_user <- 'root'
+db_password <- getPass::getPass("Enter the password: ")
+db_name <- 'data607wk5'
+db_table <- 'fltbycity'
+db_host <- '127.0.0.1' # for local access
+db_port <- 3306
+
+mydb <-  dbConnect(MySQL(), user = db_user, password = db_password,
+                 dbname = db_name, host = db_host, port = db_port)
+
+s <- paste0("select * from ", db_table)
+rs <- dbSendQuery(mydb, s)
+df <-  fetch(rs, n = -1)
+on.exit(dbDisconnect(mydb))
+
+df
+```
+#write to CSV file for upload to grading site. Will also upload sql script used to create the DB #table.
+# good site http://sphweb.bumc.bu.edu/otlt/MPH-Modules/BS/R/R-Manual/R-Manual5.html
+
+```{r}
+write.csv(df, 'fltbycity.csv',row.names=FALSE)
+```
+# https://tibble.tidyverse.org/
+# Tidy work. Use Control Shift M for #shortcut to pipes
+
+```{r}
+library(tidyverse)
+library(dplyr)
+
+fltdata <- as_tibble(df)
+fltdata
+
+#check gahter worked on  
+#fltdatachk <- fltdata %>% gather(city, count, -id, -airline, -time_perf)
+# select gets rid of id field
+#spread to widen the time performance column
+
+fltdata2 <- fltdata %>% gather(city, count, -id, -airline, -time_perf) %>% select (airline, time_perf, city, count) %>%  spread (time_perf, count)
+
+fltdata2
+
+# Add Percent on time to data frame fltdata2 and total count
+
+fltdata3 <- fltdata2 %>% mutate( percontime = on_time/(on_time + delayed), total_flights = (on_time + delayed))
+fltdata3
+
+  ggplot(fltdata3, aes(fill=airline, y=percontime, x=city)) +
+    ggtitle("Ontime by City") +
+    theme(plot.title = element_text(hjust = 0.5)) + 
+    geom_bar(position='dodge', stat="identity") +
+    xlab('City') + 
+    ylab('Percent of Flights On time')
+```
+
+Conclusion:
+1) Alaska airlines has less delays in each airport
+2) Philly appears to be the most on time of all the airports for both airlines from a percentage perspective
+3) San Francisco seems to be the most delayed airport from the graph for both airlines. 
+4) I would fly Alaska if I were concerned with being at an airport on time. 

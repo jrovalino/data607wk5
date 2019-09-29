@@ -1,0 +1,5 @@
+"id","airline","time_perf","la_rpt","phi_rpt","sd_rpt","sf_rpt","sea_rpt"
+1,"ALASKA","on_time",497,221,212,503,1841
+2,"ALASKA","delayed",62,12,20,102,305
+3,"AM WEST","on_time",694,4840,383,320,201
+4,"AM WEST","delayed",117,415,65,129,61
